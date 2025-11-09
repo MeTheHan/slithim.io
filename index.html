@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Slither.io Pro: Son Sürüm</title>
+<style>
+  :root {
+    --player-color: #4CAF50;
+    --ui-bg: rgba(0, 0, 0, 0.6);
+    --ui-border: rgba(255, 255, 255, 0.3);
+  }
+  body {
+    background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    touch-action: none;
+  }
+  canvas {
+    display: block;
+    background: #111;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+    border-radius: 5px;
+    cursor: none;
+  }
+  #gameContainer {
+    position: relative;
+  }
+  .ui-panel {
+    position: absolute;
+    background: var(--ui-bg);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    z-index: 100;
+    font-size: 14px;
+    border: 1px solid var(--ui-border);
+    transition: opacity 0.3s;
+  }
+  #score {
+    top: 15px;
+    left: 15px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 16px;
+  }
+  #leaderboard {
+    top: 15px;
+    right: 15px;
+    min-width: 170px;
+  }
+  #leaderboard h3 {
+    margin: 0 0 6px 0;
+    text-align: center;
+    border-bottom: 1px solid var(--ui-border);
+    padding-bottom: 4px;
+    font-size: 15px;
+  }
+  #leaderboardList {
+    list-style-type: none;
+    padding: 0; 
+    margin: 0;
+  }
+  #leaderboardList li {
+    padding: 2px 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+  }
+  #leaderboardList li span:first-child {
+    overflow: hidden; 
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
+    max-width: 110px;
+  }
+  .fullscreen-overlay {
+    position: absolute;
+    top: 0; 
+    left: 0;
+    width: 100%; 
+    height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    text-align: center;
+    z-index: 200;
+    border-radius: 5px;
+    transition: opacity 0.3s, visibility 0.3s;
+  }
+  .hidden {
+    opacity: 0;
+    visibility: hidden;
+  }
+  #startScreen h1 {
+    font-size: 42px;
+    margin-bottom: 10px;
+    color: var(--player-color);
+    text-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+  }
+  #startScreen p {
+    font-size: 16px;
+    max-width: 450px;
+    line-height: 1.5;
+    margin: 10px 0 20px 0;
+    color: #ddd;
+  }
+  .action-button {
+    margin-top: 15px; 
+    padding: 15px 45px; 
+    font-size: 22px;
+    background: linear-gradient(to right, #4CAF50, #2E7D32);
+    color: white; 
+    border: none; 
+    border-radius: 50px; 
+    cursor: pointer;
+    transition: all 0.3s; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    font-weight: bold; 
+    letter-spacing: 1px;
+  }
+  .action-button:hover {
+    transform: translateY(-3px); 
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  }
+  .secondary-button {
+    background: linear-gradient(to right, #6c757d, #343a40);
+    font-size: 18px; 
+    padding: 12px 30px;
+  }
+  .highlight { 
+    color: var(--player-color); 
+    font-weight: bold; 
+  }
+  #playerNameInput {
+    font-size: 18px; 
+    padding: 10px; 
+    width: 250px; 
+    text-align: center;
+    background: rgba(255, 255, 255, 0.1); 
+    border: 1px solid var(--ui-border);
+    color: white; 
+    border-radius: 20px; 
+    margin-top: 15px;
+  }
+  #playerNameInput::placeholder { 
+    color: #aaa; 
+  }
+  #skinSelector { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    margin-top: 20px; 
+    gap: 15px; 
+  }
+  .arrow-button { 
+    font-size: 30px; 
+    cursor: pointer; 
+    user-select: none; 
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+  }
+  #skinPreview { 
+    width: 60px; 
+    height: 60px; 
+    border: 2px solid white; 
+    border-radius: 50%; 
+  }
+  #skinName { 
+    margin-top: 10px; 
+    font-size: 16px; 
+  }
+  #settingsScreen h1 { 
+    font-size: 36px; 
+  }
+  .setting-row { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    width: 300px; 
+    margin-bottom: 15px; 
+  }
+  .setting-row label { 
+    font-size: 18px; 
+  }
+  .setting-row select, .setting-row input {
+    font-size: 16px; 
+    background: #333; 
+    color: white; 
+    border: 1px solid var(--ui-border); 
+    border-radius: 5px; 
+    padding: 5px;
+  }
+  .mobile-controls {
+    position: absolute; 
+    bottom: 30px; 
+    width: 80px; 
+    height: 80px;
+    border-radius: 50%; 
+    z-index: 150; 
+    display: none;
+    touch-action: none;
+  }
+  #joystick { 
+    left: 30px; 
+    background: rgba(255, 255, 255, 0.1); 
+    border: 2px solid rgba(255, 255, 255, 0.2); 
+  }
+  #joystick-knob { 
+    position: absolute; 
+    width: 40px; 
+    height: 40px; 
+    background: rgba(255, 255, 255, 0.4); 
+    border-radius: 50%; 
+    left: 20px; 
+    top: 20px; 
+  }
+  #boost-button {
+    right: 30px; 
+    background: rgba(255, 82, 82, 0.4);
+    display: none; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 14px;
+    color: white; 
+    text-align: center;
+    font-weight: bold;
+  }
+  #player-indicator {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.5);
+    color: #4CAF50;
+    padding: 8px 15px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 100;
+  }
+  #languageSelector {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 300;
+    background: var(--ui-bg);
+    color: white;
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid var(--ui-border);
+  }
+  .notification {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    z-index: 300;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .notification.show {
+    opacity: 1;
+  }
+  #credit {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+    z-index: 100;
+  }
+  #difficulty {
+    width: 100px;
+  }
+</style>
+</head>
+<body>
+<div id="gameContainer">
+  <canvas id="game"></canvas>
+  <div id="score" class="ui-panel"></div>
+  <div id="leaderboard" class="ui-panel">
+    <h3></h3>
+    <ul id="leaderboardList"></ul>
+  </div>
+  <div id="player-indicator"></div>
+  <div id="joystick" class="mobile-controls"><div id="joystick-knob"></div></div>
+  <div id="boost-button" class="mobile-controls"></div>
+  <select id="languageSelector">
+    <option value="en">English</option>
+    <option value="tr">Türkçe</option>
+    <option value="es">Español</option>
+    <option value="de">Deutsch</option>
+    <option value="fr">Français</option>
+    <option value="pt">Português</option>
+    <option value="ru">Русский</option>
+    <option value="ar">العربية</option>
+    <option value="ja">日本語</option>
+    <option value="zh">中文</option>
+  </select>
+  <div class="notification" id="notification"></div>
+  <div id="credit">Made by YouTube: @MTechnow</div>
+  <div id="startScreen" class="fullscreen-overlay">
+    <h1></h1>
+    <input type="text" id="playerNameInput" maxlength="15">
+    <div id="skinSelector">
+        <span class="arrow-button" id="prevSkin">&lt;</span>
+        <div id="skinPreview"></div>
+        <span class="arrow-button" id="nextSkin">&gt;</span>
+    </div>
+    <div id="skinName"></div>
+    <p></p>
+    <button id="startButton" class="action-button"></button>
+    <button id="settingsButton" class="action-button secondary-button"></button>
+  </div>
+  <div id="settingsScreen" class="fullscreen-overlay hidden">
+    <h1></h1>
+    <div class="setting-row">
+        <label for="boostKeySelect"></label>
+        <select id="boostKeySelect">
+            <option value="leftClick"></option>
+            <option value="rightClick"></option>
+            <option value="spacebar"></option>
+        </select>
+    </div>
+    <div class="setting-row">
+        <label for="graphicsQuality"></label>
+        <select id="graphicsQuality"><option value="High"></option><option value="Low"></option></select>
+    </div>
+    <div class="setting-row">
+        <label for="aiCount"></label>
+        <select id="aiCount"><option value="20">20</option><option value="30" selected>30</option><option value="40">40</option><option value="50">50</option></select>
+    </div>
+    <div class="setting-row">
+        <label for="difficulty"></label>
+        <select id="difficulty">
+            <option value="easy"></option>
+            <option value="medium" selected></option>
+            <option value="hard"></option>
+            <option value="extreme"></option>
+        </select>
+    </div>
+    <div class="setting-row">
+        <label for="showNames"></label>
+        <input type="checkbox" id="showNames" checked>
+    </div>
+    <div class="setting-row">
+        <label for="showGrid"></label>
+        <input type="checkbox" id="showGrid" checked>
+    </div>
+    <button id="backToMenuButton" class="action-button"></button>
+  </div>
+</div>
+
+<script>
+// --- LANGUAGE SUPPORT ---
+const languages = {
+  en: {
+    gameTitle: "SLITHER.IO PRO",
+    namePlaceholder: "Enter your name",
+    startButton: "START GAME",
+    settingsButton: "Settings",
+    gameOverTitle: "Game Over!",
+    gameOverText: "Your highest length: {{length}}<br>Click the button to play again",
+    lengthText: "Length: {{length}}",
+    leaderboardTitle: "Leaderboard",
+    playerIndicator: "YOU",
+    boostButton: "BOOST",
+    settingsTitle: "Settings",
+    boostKeyLabel: "Boost Key",
+    boostOptions: ["Left Click", "Right Click", "Spacebar"],
+    graphicsLabel: "Graphics Quality",
+    graphicsOptions: ["High", "Low"],
+    aiCountLabel: "AI Count",
+    difficultyLabel: "Difficulty",
+    difficultyOptions: ["Easy", "Medium", "Hard", "Extreme"],
+    showNamesLabel: "Show Names",
+    showGridLabel: "Show Grid",
+    backButton: "Back",
+    introText: "Enter your name, choose your snake, and become the king of the arena!",
+    notification: "Language changed to English"
+  },
+  tr: {
+    gameTitle: "SLITHER.IO PRO",
+    namePlaceholder: "İsminizi girin",
+    startButton: "OYUNU BAŞLAT",
+    settingsButton: "Ayarlar",
+    gameOverTitle: "Oyun Bitti!",
+    gameOverText: "Ulaştığınız en yüksek uzunluk: {{length}}<br>Tekrar oynamak için butona tıklayın",
+    lengthText: "Uzunluk: {{length}}",
+    leaderboardTitle: "Lider Tablosu",
+    playerIndicator: "SİZ",
+    boostButton: "HIZLAN",
+    settingsTitle: "Ayarlar",
+    boostKeyLabel: "Hızlanma Tuşu",
+    boostOptions: ["Sol Tık", "Sağ Tık", "Boşluk Tuşu"],
+    graphicsLabel: "Grafik Kalitesi",
+    graphicsOptions: ["Yüksek", "Düşük"],
+    aiCountLabel: "Yapay Zeka Sayısı",
+    difficultyLabel: "Zorluk Seviyesi",
+    difficultyOptions: ["Kolay", "Orta", "Zor", "Çok Zor"],
+    showNamesLabel: "İsimleri Göster",
+    showGridLabel: "Izgarayı Göster",
+    backButton: "Geri",
+    introText: "İsmini yaz, yılanını seç ve arenanın kralı ol!",
+    notification: "Dil Türkçe olarak değiştirildi"
+  },
+  // ... other languages (same structure as before) ...
+};
+
+let currentLanguage = 'en';
+
+// --- ELEMENT REFERENCES ---
+const getEl = (id) => document.getElementById(id);
+const canvas = getEl('game'), ctx = canvas.getContext('2d');
+const scoreElement = getEl('score'), leaderboardList = getEl('leaderboardList');
+const startScreen = getEl('startScreen'), settingsScreen = getEl('settingsScreen');
+const startButton = getEl('startButton'), settingsButton = getEl('settingsButton'), backToMenuButton = getEl('backToMenuButton');
+const playerNameInput = getEl('playerNameInput');
+const skinPreview = getEl('skinPreview'), skinName = getEl('skinName'), prevSkinBtn = getEl('prevSkin'), nextSkinBtn = getEl('nextSkin');
+const boostKeySelect = getEl('boostKeySelect');
+const graphicsQualitySelect = getEl('graphicsQuality'), aiCountSelect = getEl('aiCount'), difficultySelect = getEl('difficulty');
+const showNamesCheckbox = getEl('showNames'), showGridCheckbox = getEl('showGrid');
+const joystick = getEl('joystick'), joystickKnob = getEl('joystick-knob'), boostButton = getEl('boost-button');
+const languageSelector = getEl('languageSelector'), notification = getEl('notification');
+const leaderboardTitle = getEl('leaderboard').querySelector('h3');
+const playerIndicator = getEl('player-indicator');
+
+// --- GAME SETTINGS & STATE ---
+const settings = {
+  worldSize: 4000,
+  visualGridSize: 50,
+  player: {
+    defaultName: "Player",
+    size: 12,
+    baseSpeed: 2.5,
+    boostSpeed: 4.5,
+    turnSpeed: 0.09,
+    startLength: 15,
+    boostCostInterval: 5
+  },
+  food: {
+    size: 6,
+    colors: [
+      '#FF5252', '#FFEB3B', '#4CAF50', '#2196F3', '#9C27B0', 
+      '#FF6B6B', '#4ECDC4', '#556270', '#C06C84', '#F8B195',
+      '#6A0572', '#AB46D2', '#1A535C', '#FF9A8B', '#6D214F',
+      '#25CCF7', '#1B9CFC', '#FD7272', '#FC427B', '#82589F'
+    ],
+    count: 400,
+    value: 1
+  },
+  ai: {
+    names: [
+      "PewDiePie", "MrBeast", "Markiplier", "Ninja", "Shane",
+      "James", "Mary", "John", "Patricia", "Robert",
+      "Jennifer", "Michael", "Linda", "William", "Elizabeth",
+      "David", "Susan", "Joseph", "Jessica", "Thomas",
+      "Sarah", "Charles", "Karen", "Christopher", "Nancy",
+      "Daniel", "Lisa", "Matthew", "Betty", "Anthony"
+    ],
+    colors: [
+      '#FF9800', '#E91E63', '#00BCD4', '#8BC34A', '#607D8B', 
+      '#FF5722', '#9C27B0', '#3F51B5', '#009688', '#795548',
+      '#FF4081', '#7E57C2', '#29B6F6', '#66BB6A', '#5C6BC0',
+      '#AB47BC', '#EC407A', '#42A5F5', '#26C6DA', '#26A69A'
+    ],
+    baseSpeed: 2,
+    turnSpeed: 0.05
+  },
+  skins: [
+    { name: 'Classic Green', type: 'solid', color1: '#4CAF50' },
+    { name: 'Red Devil', type: 'solid', color1: '#E91E63' },
+    { name: 'Blue Ocean', type: 'solid', color1: '#00BCD4' },
+    { name: 'Yellow Venom', type: 'solid', color1: '#FFEB3B' },
+    { name: 'USA Flag', type: 'stripes', color1: '#3F51B5', color2: '#FF5252' },
+    { name: 'Danger', type: 'stripes', color1: '#FFEB3B', color2: '#111111' },
+    { name: 'Rainbow', type: 'rainbow' },
+    { name: 'Neon Pink', type: 'solid', color1: '#FF6B6B' },
+    { name: 'Electric Blue', type: 'solid', color1: '#25CCF7' },
+    { name: 'Lime Green', type: 'solid', color1: '#7BED9F' }
+  ]
+};
+
+let userSettings = {
+    graphics: 'High',
+    aiCount: 30,
+    difficulty: 'medium',
+    showNames: true,
+    showGrid: true,
+    boostKey: 'leftClick'
+};
+
+let gameState = {};
+let particles = [];
+let currentSkinIndex = 0;
+let isTouchDevice = false;
+let joystickState = {
+  active: false,
+  touchId: null,
+  startX: 0,
+  startY: 0
+};
+
+// --- PARTICLE CLASS ---
+class Particle {
+  constructor(x, y, color) {
+    this.x = x;
+    this.y = y;
+    this.color = color;
+    this.size = Math.random() * 3 + 1;
+    this.speedX = (Math.random() - 0.5) * 3;
+    this.speedY = (Math.random() - 0.5) * 3;
+    this.life = Math.random() * 50 + 20;
+  }
+  
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    this.life--;
+    this.size *= 0.97;
+  }
+  
+  draw() {
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// --- LANGUAGE FUNCTIONS ---
+function translate(key, variables = {}) {
+  let text = languages[currentLanguage][key] || languages['en'][key] || key;
+  
+  // Replace variables
+  for (const [varKey, value] of Object.entries(variables)) {
+    text = text.replace(`{{${varKey}}}`, value);
+  }
+  
+  return text;
+}
+
+function updateUI() {
+  // Start Screen
+  getEl('startScreen').querySelector('h1').textContent = translate('gameTitle');
+  playerNameInput.placeholder = translate('namePlaceholder');
+  startButton.textContent = translate('startButton');
+  settingsButton.textContent = translate('settingsButton');
+  getEl('startScreen').querySelector('p').innerHTML = translate('introText');
+  
+  // Settings Screen
+  getEl('settingsScreen').querySelector('h1').textContent = translate('settingsTitle');
+  backToMenuButton.textContent = translate('backButton');
+  
+  // Setting labels
+  document.querySelector('label[for="boostKeySelect"]').textContent = translate('boostKeyLabel');
+  document.querySelector('label[for="graphicsQuality"]').textContent = translate('graphicsLabel');
+  document.querySelector('label[for="aiCount"]').textContent = translate('aiCountLabel');
+  document.querySelector('label[for="difficulty"]').textContent = translate('difficultyLabel');
+  document.querySelector('label[for="showNames"]').textContent = translate('showNamesLabel');
+  document.querySelector('label[for="showGrid"]').textContent = translate('showGridLabel');
+  
+  // Boost key options
+  const boostOptions = translate('boostOptions');
+  boostKeySelect.querySelectorAll('option').forEach((option, index) => {
+    option.textContent = boostOptions.split(',')[index];
+  });
+  
+  // Graphics options
+  const graphicsOptions = translate('graphicsOptions');
+  graphicsQualitySelect.querySelectorAll('option').forEach((option, index) => {
+    option.textContent = graphicsOptions.split(',')[index];
+  });
+  
+  // Difficulty options
+  const difficultyOptions = translate('difficultyOptions');
+  difficultySelect.querySelectorAll('option').forEach((option, index) => {
+    option.textContent = difficultyOptions.split(',')[index];
+  });
+  
+  // In-game elements
+  leaderboardTitle.textContent = translate('leaderboardTitle');
+  playerIndicator.textContent = translate('playerIndicator');
+  boostButton.textContent = translate('boostButton');
+  
+  // Update skin names
+  updateSkinPreview();
+}
+
+function showNotification(message) {
+  notification.textContent = message;
+  notification.classList.add('show');
+  
+  setTimeout(() => {
+    notification.classList.remove('show');
+  }, 2000);
+}
+
+// --- INITIALIZATION ---
+window.onload = function() {
+  isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (window.matchMedia("(pointer: coarse)").matches);
+  
+  if(isTouchDevice) {
+    joystick.style.display = 'block';
+    boostButton.style.display = 'flex';
+  }
+  
+  resizeCanvas();
+  setupEventListeners();
+  updateSkinPreview();
+  initGameState();
+  updateUI();
+  
+  // Set default language based on browser
+  const browserLang = navigator.language.substring(0, 2);
+  if (languages[browserLang]) {
+    currentLanguage = browserLang;
+    languageSelector.value = browserLang;
+  }
+  
+  // Update UI with selected language
+  updateUI();
+};
+
+window.addEventListener('resize', resizeCanvas);
+function resizeCanvas() { 
+  canvas.width = window.innerWidth; 
+  canvas.height = window.innerHeight; 
+}
+
+// --- UI & EVENT HANDLING ---
+let boostStartFunc = () => { 
+  if (gameState.isRunning) {
+    gameState.player.isBoosting = true; 
+    if (userSettings.graphics === 'High') {
+      createParticles(gameState.player.x, gameState.player.y, "#FFEB3B", 3);
+    }
+  }
+};
+let boostEndFunc = () => { 
+  if (gameState.isRunning) gameState.player.isBoosting = false; 
+};
+
+function updateDesktopControls() {
+  // Remove old listeners
+  canvas.removeEventListener('mousedown', boostStartFunc);
+  canvas.removeEventListener('mouseup', boostEndFunc);
+  canvas.removeEventListener('contextmenu', (e) => e.preventDefault());
+  window.removeEventListener('keydown', handleKeyDown);
+  window.removeEventListener('keyup', handleKeyUp);
+  
+  // Always prevent context menu on canvas
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+  
+  // Add new listeners based on setting
+  if (userSettings.boostKey === 'leftClick') {
+    canvas.addEventListener('mousedown', boostStartFunc);
+    canvas.addEventListener('mouseup', boostEndFunc);
+  } else if (userSettings.boostKey === 'rightClick') {
+    canvas.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      boostStartFunc();
+    });
+    canvas.addEventListener('mouseup', boostEndFunc);
+  } else if (userSettings.boostKey === 'spacebar') {
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+  }
+}
+
+function handleKeyDown(e) {
+  if (e.code === 'Space' && !e.repeat) {
+    boostStartFunc();
+    e.preventDefault();
+  }
+}
+
+function handleKeyUp(e) {
+  if (e.code === 'Space') {
+    boostEndFunc();
+    e.preventDefault();
+  }
+}
+
+function setupEventListeners() {
+  // Mouse movement
+  canvas.addEventListener('mousemove', e => { 
+    gameState.mouse = { x: e.clientX, y: e.clientY }; 
+  });
+  
+  // Desktop controls
+  updateDesktopControls();
+  
+  // Mobile controls
+  if (isTouchDevice) {
+    joystick.addEventListener('touchstart', handleJoystickStart, { passive: false });
+    joystick.addEventListener('touchmove', handleJoystickMove, { passive: false });
+    joystick.addEventListener('touchend', handleJoystickEnd, { passive: false });
+    boostButton.addEventListener('touchstart', e => { e.preventDefault(); boostStartFunc(); }, { passive: false });
+    boostButton.addEventListener('touchend', e => { e.preventDefault(); boostEndFunc(); }, { passive: false });
+  }
+  
+  // Menu Buttons
+  startButton.addEventListener('click', startGame);
+  settingsButton.addEventListener('click', () => { 
+    startScreen.classList.add('hidden'); 
+    settingsScreen.classList.remove('hidden'); 
+  });
+  backToMenuButton.addEventListener('click', () => { 
+    settingsScreen.classList.add('hidden'); 
+    startScreen.classList.remove('hidden'); 
+  });
+  
+  // Skin Selector
+  prevSkinBtn.addEventListener('click', () => { 
+    currentSkinIndex = (currentSkinIndex - 1 + settings.skins.length) % settings.skins.length; 
+    updateSkinPreview(); 
+  });
+  nextSkinBtn.addEventListener('click', () => { 
+    currentSkinIndex = (currentSkinIndex + 1) % settings.skins.length; 
+    updateSkinPreview(); 
+  });
+  
+  // Settings Controls
+  boostKeySelect.addEventListener('change', e => {
+    userSettings.boostKey = e.target.value;
+    updateDesktopControls();
+  });
+  graphicsQualitySelect.addEventListener('change', (e) => userSettings.graphics = e.target.value);
+  aiCountSelect.addEventListener('change', (e) => userSettings.aiCount = parseInt(e.target.value));
+  difficultySelect.addEventListener('change', (e) => userSettings.difficulty = e.target.value);
+  showNamesCheckbox.addEventListener('change', (e) => userSettings.showNames = e.target.checked);
+  showGridCheckbox.addEventListener('change', (e) => userSettings.showGrid = e.target.checked);
+  
+  // Language selector
+  languageSelector.addEventListener('change', (e) => {
+    currentLanguage = e.target.value;
+    updateUI();
+    showNotification(translate('notification'));
+  });
+}
+
+// Joystick handlers
+function handleJoystickStart(e) {
+  e.preventDefault();
+  joystickState.active = true;
+  joystickState.touchId = e.changedTouches[0].identifier;
+  const rect = joystick.getBoundingClientRect();
+  joystickState.startX = rect.left + rect.width / 2;
+  joystickState.startY = rect.top + rect.height / 2;
+}
+
+function handleJoystickMove(e) {
+  e.preventDefault();
+  if (!joystickState.active) return;
+  
+  const touch = Array.from(e.changedTouches).find(t => t.identifier === joystickState.touchId);
+  if (!touch) return;
+  
+  const dx = touch.clientX - joystickState.startX;
+  const dy = touch.clientY - joystickState.startY;
+  gameState.player.targetAngle = Math.atan2(dy, dx);
+  
+  const knobMaxDist = joystick.clientWidth / 2 - joystickKnob.clientWidth / 2;
+  const dist = Math.min(Math.sqrt(dx*dx + dy*dy), knobMaxDist);
+  const angle = Math.atan2(dy, dx);
+  
+  joystickKnob.style.transform = `translate(${dist * Math.cos(angle)}px, ${dist * Math.sin(angle)}px)`;
+}
+
+function handleJoystickEnd(e) {
+  e.preventDefault();
+  if (!joystickState.active) return;
+  
+  const touch = Array.from(e.changedTouches).find(t => t.identifier === joystickState.touchId);
+  if (!touch) return;
+  
+  joystickState.active = false;
+  joystickKnob.style.transform = `translate(0px, 0px)`;
+}
+
+function updateSkinPreview() {
+  const skin = settings.skins[currentSkinIndex];
+  skinName.textContent = skin.name;
+  
+  if (skin.type === 'solid') {
+    skinPreview.style.background = skin.color1;
+  } else if (skin.type === 'stripes') {
+    skinPreview.style.background = `repeating-linear-gradient(45deg, ${skin.color1}, ${skin.color1} 10px, ${skin.color2} 10px, ${skin.color2} 20px)`;
+  } else if (skin.type === 'rainbow') {
+    skinPreview.style.background = 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)';
+  }
+}
+
+// --- GAME LOGIC ---
+function initGameState() {
+  const skin = settings.skins[currentSkinIndex];
+  const playerName = playerNameInput.value.trim() || settings.player.defaultName;
+  
+  gameState = {
+    isRunning: false,
+    player: createSnake(
+      settings.worldSize / 2, 
+      settings.worldSize / 2,
+      settings.player.startLength, 
+      skin, 
+      playerName
+    ),
+    foods: [], 
+    snakes: [], 
+    camera: { x: 0, y: 0 },
+    mouse: { x: 0, y: 0 }, 
+    boostFrameCounter: 0,
+    deadSnakes: []
+  };
+  
+  gameState.player.isPlayer = true;
+  gameState.snakes.push(gameState.player);
+}
+
+function createSnake(x, y, length, skin, name) {
+  const segments = [];
+  for (let i = 0; i < length; i++) {
+    segments.push({ x: x - i * 5, y: y });
+  }
+  
+  return {
+    x, y,
+    name: name || settings.ai.names[Math.floor(Math.random() * settings.ai.names.length)],
+    angle: 0,
+    targetAngle: 0,
+    segments,
+    skin,
+    speed: settings.player.baseSpeed,
+    isBoosting: false,
+    isDead: false,
+    isPlayer: false,
+    ai: {
+      state: 'SEEKING_FOOD',
+      target: null,
+      timer: 0,
+      aggression: 1.0
+    }
+  };
+}
+
+function startGame() {
+  initGameState();
+  particles = [];
+  
+  // Create AI snakes
+  for (let i = 0; i < userSettings.aiCount; i++) {
+    const x = Math.random() * settings.worldSize;
+    const y = Math.random() * settings.worldSize;
+    const skin = settings.skins[Math.floor(Math.random() * settings.skins.length)];
+    const snake = createSnake(x, y, 10 + Math.floor(Math.random() * 20), skin);
+    
+    // Adjust AI based on difficulty
+    switch(userSettings.difficulty) {
+      case 'easy':
+        snake.speed = settings.ai.baseSpeed * 0.8;
+        snake.ai.aggression = 0.7;
+        break;
+      case 'medium':
+        snake.speed = settings.ai.baseSpeed;
+        snake.ai.aggression = 1.0;
+        break;
+      case 'hard':
+        snake.speed = settings.ai.baseSpeed * 1.2;
+        snake.ai.aggression = 1.3;
+        break;
+      case 'extreme':
+        snake.speed = settings.ai.baseSpeed * 1.5;
+        snake.ai.aggression = 1.6;
+        break;
+    }
+    
+    gameState.snakes.push(snake);
+  }
+  
+  // Create food
+  for (let i = 0; i < settings.food.count; i++) {
+    gameState.foods.push({
+      x: Math.random() * settings.worldSize,
+      y: Math.random() * settings.worldSize,
+      color: settings.food.colors[Math.floor(Math.random() * settings.food.colors.length)],
+      size: settings.food.size
+    });
+  }
+  
+  startScreen.classList.add('hidden');
+  settingsScreen.classList.add('hidden');
+  gameState.isRunning = true;
+  requestAnimationFrame(gameLoop);
+}
+
+// --- UPDATE FUNCTIONS ---
+function updatePlayer() {
+  if (!gameState.player || gameState.player.isDead) return;
+  
+  // Update target angle from mouse or joystick
+  if (!isTouchDevice) {
+    gameState.player.targetAngle = Math.atan2(
+      gameState.mouse.y - canvas.height / 2,
+      gameState.mouse.x - canvas.width / 2
+    );
+  }
+  
+  // Smooth turning
+  let angleDiff = gameState.player.targetAngle - gameState.player.angle;
+  while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+  while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+  gameState.player.angle += angleDiff * settings.player.turnSpeed;
+  
+  // Handle boosting
+  if (gameState.player.isBoosting && gameState.player.segments.length > settings.player.startLength) {
+    gameState.player.speed = settings.player.boostSpeed;
+    gameState.boostFrameCounter++;
+    
+    // Create boost particles
+    if (userSettings.graphics === 'High' && Math.random() > 0.7) {
+      createParticles(gameState.player.x, gameState.player.y, "#FFEB3B", 2);
+    }
+    
+    if (gameState.boostFrameCounter >= settings.player.boostCostInterval) {
+      gameState.boostFrameCounter = 0;
+      const droppedSegment = gameState.player.segments.pop();
+      
+      // Create food from dropped segment
+      const skinColor = gameState.player.skin.type === 'rainbow' ? 
+        `hsl(${Math.floor(Math.random() * 360)}, 100%, 50%)` : 
+        gameState.player.skin.color1;
+        
+      gameState.foods.push({
+        x: droppedSegment.x, 
+        y: droppedSegment.y, 
+        color: skinColor, 
+        size: settings.food.size - 2
+      });
+      
+      // Create particles
+      if (userSettings.graphics === 'High') {
+        createParticles(droppedSegment.x, droppedSegment.y, skinColor, 10);
+      }
+    }
+  } else {
+    gameState.player.speed = settings.player.baseSpeed;
+  }
+  
+  // Move the snake
+  moveSnake(gameState.player);
+}
+
+function updateAIs() {
+  gameState.snakes.forEach(snake => {
+    if (!snake || snake.isPlayer || snake.isDead) return;
+    
+    snake.ai.timer--;
+    if (snake.ai.timer <= 0) {
+      // Update AI state
+      const perceptionRadius = 300;
+      let threats = [];
+      let prey = [];
+      
+      gameState.snakes.forEach(other => {
+        if (!other || snake === other || other.isDead) return;
+        
+        const dist = Math.sqrt(Math.pow(snake.x - other.x, 2) + Math.pow(snake.y - other.y, 2));
+        if (dist < perceptionRadius) {
+          if (other.segments.length > snake.segments.length * 1.5) {
+            threats.push(other);
+          } else if (snake.segments.length > other.segments.length * 1.5) {
+            prey.push(other);
+          }
+        }
+      });
+      
+      if (threats.length > 0) {
+        snake.ai.state = 'AVOIDING_DANGER';
+        snake.ai.target = threats[0];
+      } else if (prey.length > 0 && snake.segments.length > 50) {
+        snake.ai.state = 'HUNTING';
+        snake.ai.target = prey[0];
+      } else {
+        snake.ai.state = 'SEEKING_FOOD';
+        snake.ai.target = findClosestFood(snake);
+      }
+      
+      snake.ai.timer = 30 * snake.ai.aggression;
+    }
+    
+    // Execute behavior based on state
+    switch(snake.ai.state) {
+      case 'AVOIDING_DANGER':
+        const angleToThreat = Math.atan2(
+          snake.ai.target.y - snake.y,
+          snake.ai.target.x - snake.x
+        );
+        snake.targetAngle = angleToThreat + Math.PI; // Move away
+        snake.isBoosting = true;
+        break;
+        
+      case 'HUNTING':
+        const prey = snake.ai.target;
+        // Predict prey position
+        const predictX = prey.x + Math.cos(prey.angle) * 50;
+        const predictY = prey.y + Math.sin(prey.angle) * 50;
+        snake.targetAngle = Math.atan2(predictY - snake.y, predictX - snake.x);
+        snake.isBoosting = Math.sqrt(
+          Math.pow(snake.x - prey.x, 2) + Math.pow(snake.y - prey.y, 2)
+        ) > 150;
+        break;
+        
+      case 'SEEKING_FOOD':
+      default:
+        if (snake.ai.target) {
+          snake.targetAngle = Math.atan2(
+            snake.ai.target.y - snake.y,
+            snake.ai.target.x - snake.x
+          );
+        } else {
+          // Random wander
+          snake.targetAngle += (Math.random() - 0.5) * 0.5;
+        }
+        snake.isBoosting = false;
+        break;
+    }
+    
+    // Apply turning
+    let angleDiff = snake.targetAngle - snake.angle;
+    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+    snake.angle += angleDiff * settings.ai.turnSpeed * snake.ai.aggression;
+    
+    // Handle boosting for AI
+    if (snake.isBoosting && snake.segments.length > 20) {
+      snake.speed = settings.player.boostSpeed * snake.ai.aggression;
+      // Occasionally drop segments while boosting
+      if(Math.random() < 0.1) {
+        const droppedSegment = snake.segments.pop();
+        // Create food from dropped segment
+        const skinColor = snake.skin.type === 'rainbow' ? 
+          `hsl(${Math.floor(Math.random() * 360)}, 100%, 50%)` : 
+          snake.skin.color1;
+          
+        gameState.foods.push({
+          x: droppedSegment.x, 
+          y: droppedSegment.y, 
+          color: skinColor, 
+          size: settings.food.size - 2
+        });
+      }
+    } else {
+      snake.speed = settings.ai.baseSpeed * snake.ai.aggression;
+    }
+    
+    // Move the snake
+    moveSnake(snake);
+  });
+}
+
+function moveSnake(snake) {
+  snake.x += Math.cos(snake.angle) * snake.speed;
+  snake.y += Math.sin(snake.angle) * snake.speed;
+  
+  // Wrap around world edges
+  snake.x = (snake.x + settings.worldSize) % settings.worldSize;
+  snake.y = (snake.y + settings.worldSize) % settings.worldSize;
+  
+  // Update segments
+  snake.segments.unshift({ x: snake.x, y: snake.y });
+  snake.segments.pop();
+}
+
+function checkCollisions() {
+  const allSnakes = gameState.snakes;
+  
+  for (let i = 0; i < allSnakes.length; i++) {
+    const snake = allSnakes[i];
+    if (!snake || snake.isDead) continue;
+    
+    const head = snake.segments[0];
+    
+    // Check food collisions
+    for (let j = gameState.foods.length - 1; j >= 0; j--) {
+      const food = gameState.foods[j];
+      const dx = food.x - head.x;
+      const dy = food.y - head.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < settings.player.size + food.size) {
+        // Eat food
+        gameState.foods.splice(j, 1);
+        gameState.foods.push({
+          x: Math.random() * settings.worldSize,
+          y: Math.random() * settings.worldSize,
+          color: settings.food.colors[Math.floor(Math.random() * settings.food.colors.length)],
+          size: settings.food.size
+        });
+        
+        // Add segments
+        for(let k = 0; k < settings.food.value; k++) {
+          snake.segments.push({ 
+            ...snake.segments[snake.segments.length - 1] 
+          });
+        }
+        
+        // Create particles
+        if (userSettings.graphics === 'High') {
+          createParticles(food.x, food.y, food.color, 15);
+        }
+      }
+    }
+    
+    // Check snake collisions
+    for (let j = 0; j < allSnakes.length; j++) {
+      const otherSnake = allSnakes[j];
+      if (!otherSnake || snake === otherSnake || otherSnake.isDead) continue;
+      
+      // Check collision with other snake's body
+      for (let k = 1; k < otherSnake.segments.length; k++) {
+        const segment = otherSnake.segments[k];
+        const dx = segment.x - head.x;
+        const dy = segment.y - head.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < settings.player.size) {
+          handleDeath(snake);
+          return; // Only one death per frame
+        }
+      }
+    }
+    
+    // Check collision with own body
+    for (let k = settings.player.startLength; k < snake.segments.length; k++) {
+      const segment = snake.segments[k];
+      const dx = segment.x - head.x;
+      const dy = segment.y - head.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < settings.player.size / 2) {
+        handleDeath(snake);
+        return;
+      }
+    }
+  }
+}
+
+function handleDeath(deadSnake) {
+  if (!deadSnake || deadSnake.isDead) return;
+  
+  deadSnake.isDead = true;
+  gameState.deadSnakes.push(deadSnake);
+  
+  // Convert snake segments to food
+  deadSnake.segments.forEach((seg, index) => {
+    if (index % 4 === 0) {
+      const skinColor = deadSnake.skin.type === 'rainbow' ? 
+        `hsl(${index * 5 % 360}, 100%, 50%)` : 
+        deadSnake.skin.color1;
+        
+      gameState.foods.push({
+        x: seg.x,
+        y: seg.y,
+        color: skinColor,
+        size: settings.food.size * 1.5
+      });
+      
+      // Create particles
+      if (userSettings.graphics === 'High') {
+        createParticles(seg.x, seg.y, skinColor, 5);
+      }
+    }
+  });
+  
+  // Handle player death
+  if (deadSnake.isPlayer) {
+    gameOver();
+  }
+}
+
+function cleanupAndRespawn() {
+  if (gameState.deadSnakes.length === 0) return;
+  
+  // Remove dead snakes
+  gameState.snakes = gameState.snakes.filter(snake => !snake.isDead);
+  
+  // Respawn AI snakes
+  const aisThatDied = gameState.deadSnakes.filter(s => !s.isPlayer).length;
+  gameState.deadSnakes = [];
+  
+  for(let i = 0; i < aisThatDied; i++) {
+    setTimeout(() => {
+      if(!gameState.isRunning) return;
+      const x = Math.random() * settings.worldSize;
+      const y = Math.random() * settings.worldSize;
+      const skin = settings.skins[Math.floor(Math.random() * settings.skins.length)];
+      const newSnake = createSnake(x, y, 10 + Math.floor(Math.random() * 20), skin);
+      
+      // Apply difficulty settings to new AI
+      switch(userSettings.difficulty) {
+        case 'easy':
+          newSnake.speed = settings.ai.baseSpeed * 0.8;
+          newSnake.ai.aggression = 0.7;
+          break;
+        case 'medium':
+          newSnake.speed = settings.ai.baseSpeed;
+          newSnake.ai.aggression = 1.0;
+          break;
+        case 'hard':
+          newSnake.speed = settings.ai.baseSpeed * 1.2;
+          newSnake.ai.aggression = 1.3;
+          break;
+        case 'extreme':
+          newSnake.speed = settings.ai.baseSpeed * 1.5;
+          newSnake.ai.aggression = 1.6;
+          break;
+      }
+      
+      gameState.snakes.push(newSnake);
+    }, 2000 + Math.random() * 2000);
+  }
+}
+
+function gameOver() {
+  gameState.isRunning = false;
+  
+  // Update game over text
+  startScreen.querySelector('h1').textContent = translate('gameOverTitle');
+  startScreen.querySelector('p').innerHTML = translate('gameOverText', { length: gameState.player.segments.length });
+  
+  startScreen.classList.remove('hidden');
+}
+
+// --- RENDERING ---
+function draw() {
+  if (!gameState.isRunning || !gameState.player) return;
+  
+  // Update camera to follow player
+  gameState.camera.x = gameState.player.x - canvas.width / 2;
+  gameState.camera.y = gameState.player.y - canvas.height / 2;
+  
+  // Clear canvas
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  ctx.save();
+  ctx.translate(-gameState.camera.x, -gameState.camera.y);
+  
+  // Draw grid if enabled
+  if (userSettings.showGrid) {
+    drawGrid();
+  }
+  
+  // Draw food
+  gameState.foods.forEach(food => {
+    ctx.fillStyle = food.color;
+    ctx.beginPath();
+    ctx.arc(food.x, food.y, food.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  
+  // Draw snakes with cylindrical effect
+  gameState.snakes.forEach(snake => {
+    if (!snake.isDead) {
+      drawSnake(snake);
+    }
+  });
+  
+  // Draw particles
+  if (userSettings.graphics === 'High') {
+    particles.forEach(p => p.draw());
+  }
+  
+  ctx.restore();
+  
+  // Update UI
+  scoreElement.textContent = translate('lengthText', { length: gameState.player.segments.length });
+  updateLeaderboard();
+}
+
+function drawGrid() {
+  ctx.strokeStyle = 'rgba(100, 100, 100, 0.2)';
+  ctx.lineWidth = 1;
+  const gridSize = settings.visualGridSize;
+  const startX = Math.floor(gameState.camera.x / gridSize) * gridSize;
+  const startY = Math.floor(gameState.camera.y / gridSize) * gridSize;
+  
+  for (let x = startX; x < startX + canvas.width + gridSize; x += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, startY);
+    ctx.lineTo(x, startY + canvas.height + gridSize);
+    ctx.stroke();
+  }
+  
+  for (let y = startY; y < startY + canvas.height + gridSize; y += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(startX, y);
+    ctx.lineTo(startX + canvas.width + gridSize, y);
+    ctx.stroke();
+  }
+}
+
+function drawSnake(snake) {
+  if (!snake || snake.segments.length === 0) return;
+  
+  const skin = snake.skin;
+  const size = settings.player.size;
+  
+  // Cylindrical snake body effect
+  for (let i = 0; i < snake.segments.length - 1; i++) {
+    const segment1 = snake.segments[i];
+    const segment2 = snake.segments[i + 1];
+    
+    // Calculate the angle between segments
+    const dx = segment2.x - segment1.x;
+    const dy = segment2.y - segment1.y;
+    const angle = Math.atan2(dy, dx);
+    
+    // Set color based on skin type
+    if (skin.type === 'rainbow') {
+      ctx.fillStyle = `hsl(${(i * 5 + Date.now() * 0.1) % 360}, 100%, 50%)`;
+    } else if (skin.type === 'stripes') {
+      ctx.fillStyle = i % 4 < 2 ? skin.color1 : skin.color2;
+    } else {
+      ctx.fillStyle = skin.color1;
+    }
+    
+    // Draw a circle for each segment
+    ctx.beginPath();
+    ctx.arc(segment1.x, segment1.y, size, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Draw connecting rectangle
+    ctx.save();
+    ctx.translate(segment1.x, segment1.y);
+    ctx.rotate(angle);
+    
+    const length = Math.sqrt(dx * dx + dy * dy);
+    ctx.fillRect(0, -size, length, size * 2);
+    
+    ctx.restore();
+  }
+  
+  // Draw the last segment
+  const lastSegment = snake.segments[snake.segments.length - 1];
+  ctx.beginPath();
+  ctx.arc(lastSegment.x, lastSegment.y, size, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Draw head
+  const head = snake.segments[0];
+  
+  // Draw eyes
+  const eyeSize = size * 0.3;
+  const eyeOffset = size * 0.4;
+  const angle = snake.angle;
+  
+  const eye1X = head.x + eyeOffset * Math.cos(angle + Math.PI/4);
+  const eye1Y = head.y + eyeOffset * Math.sin(angle + Math.PI/4);
+  
+  const eye2X = head.x + eyeOffset * Math.cos(angle - Math.PI/4);
+  const eye2Y = head.y + eyeOffset * Math.sin(angle - Math.PI/4);
+  
+  // Eye whites
+  ctx.fillStyle = 'white';
+  ctx.beginPath();
+  ctx.arc(eye1X, eye1Y, eyeSize, 0, Math.PI * 2);
+  ctx.arc(eye2X, eye2Y, eyeSize, 0, Math.PI * 2);
+  ctx.fill();
+  
+  // Eye pupils
+  ctx.fillStyle = 'black';
+  ctx.beginPath();
+  ctx.arc(
+    eye1X + eyeSize * 0.3 * Math.cos(angle), 
+    eye1Y + eyeSize * 0.3 * Math.sin(angle), 
+    eyeSize * 0.5, 
+    0, 
+    Math.PI * 2
+  );
+  ctx.arc(
+    eye2X + eyeSize * 0.3 * Math.cos(angle), 
+    eye2Y + eyeSize * 0.3 * Math.sin(angle), 
+    eyeSize * 0.5, 
+    0, 
+    Math.PI * 2
+  );
+  ctx.fill();
+  
+  // Draw name if enabled and snake is long enough
+  if (userSettings.showNames && snake.segments.length > 20) {
+    ctx.fillStyle = snake.isPlayer ? '#4CAF50' : 'white';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(snake.name, head.x, head.y - size * 1.8);
+  }
+}
+
+function updateLeaderboard() {
+  const sortedSnakes = [...gameState.snakes]
+    .filter(snake => !snake.isDead)
+    .sort((a, b) => b.segments.length - a.segments.length)
+    .slice(0, 5); // Top 5
+  
+  leaderboardList.innerHTML = '';
+  
+  sortedSnakes.forEach((snake) => {
+    const li = document.createElement('li');
+    
+    if (snake.isPlayer) {
+      li.innerHTML = `<span><span class="highlight">${snake.name}</span></span><span>${snake.segments.length}</span>`;
+    } else {
+      li.innerHTML = `<span>${snake.name}</span><span>${snake.segments.length}</span>`;
+    }
+    
+    leaderboardList.appendChild(li);
+  });
+}
+
+function createParticles(x, y, color, count) {
+  if (userSettings.graphics === 'Low') return;
+  
+  for (let i = 0; i < count; i++) {
+    particles.push(new Particle(x, y, color));
+  }
+}
+
+function findClosestFood(snake) {
+  let closestFood = null;
+  let minDistance = Infinity;
+  
+  for (const food of gameState.foods) {
+    const dx = food.x - snake.x;
+    const dy = food.y - snake.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    
+    if (dist < minDistance) {
+      minDistance = dist;
+      closestFood = food;
+    }
+  }
+  
+  return closestFood;
+}
+
+// --- MAIN GAME LOOP ---
+function gameLoop() {
+  if (!gameState.isRunning) return;
+  
+  // Update game state
+  updatePlayer();
+  updateAIs();
+  checkCollisions();
+  cleanupAndRespawn();
+  
+  // Update particles
+  if (userSettings.graphics === 'High') {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      particles[i].update();
+      if (particles[i].life <= 0) {
+        particles.splice(i, 1);
+      }
+    }
+  }
+  
+  // Render everything
+  draw();
+  
+  // Continue the game loop
+  requestAnimationFrame(gameLoop);
+}
+</script>
+</body>
+</html>
